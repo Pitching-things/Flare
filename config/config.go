@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Pitching-things/Flare/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -21,6 +22,8 @@ func SetUp(r *gin.Engine) {
 	DbConn()
 
 	r.LoadHTMLGlob("templates/*")
+
+	routes.Routes(r)
 
 }
 
