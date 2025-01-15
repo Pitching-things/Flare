@@ -3,47 +3,46 @@ package config
 import (
 	"fmt"
 	"log"
-	"os"
 
-	"github.com/Pitching-things/Flare/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"github.com/go-redis/redis"
+	"github.com/spf13/viper"
 )
 
-var Db *gorm.DB
+var Rb *redis.Client
 
 func SetUp(r *gin.Engine) {
 
 	r.Use(cors.Default())
 	LoadEnv()
-	DbConn()
 
-	r.LoadHTMLGlob("templates/*")
+	Rb = RedisConn()
 
-	routes.Routes(r)
-
+	r.LoadHTMLGlob("assets/templates/*")
 }
 
 func LoadEnv() {
-	err := godotenv.Load()
-	if err != nil {
+	viper.SetConfigFile(".env")
+
+	if err := viper.ReadInConfig(); err != nil {
 		log.Fatal("Failed to env......")
 	}
 }
 
-func DbConn() {
-	db, err := gorm.Open(postgres.Open(os.Getenv("PSQL_URL")))
+func RedisConn() *redis.Client {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     viper.GetString("REDIS_ADR"),
+		Password: viper.GetString("REDIS_PASS"),
+		DB:       viper.GetInt("REDIS_DB"),
+	})
 
+	_, err := rdb.Ping().Result()
 	if err != nil {
-		log.Fatal(err)
-		return
+		log.Fatal("Could not connect to Redis: ", err)
+	} else {
+		fmt.Println("Connected to Redis")
 	}
-	fmt.Println("Connect to Psql")
 
-	db.AutoMigrate()
-
-	Db = db
+	return rdb
 }
